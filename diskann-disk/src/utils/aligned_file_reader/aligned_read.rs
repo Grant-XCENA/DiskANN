@@ -30,6 +30,7 @@ macro_rules! alignment_marker {
 }
 
 alignment_marker!(A1, PowerOfTwo::V1);
+alignment_marker!(A64, PowerOfTwo::V64);
 alignment_marker!(A512, PowerOfTwo::V512);
 
 /// Disk-IO read request, parameterized by its required memory alignment `A`.

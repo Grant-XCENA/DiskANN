@@ -13,3 +13,10 @@ pub mod disk_provider;
 pub mod disk_sector_graph;
 pub mod disk_vertex_provider;
 pub mod disk_vertex_provider_factory;
+
+cfg_if::cfg_if! {
+    if #[cfg(feature = "cxl")] {
+        pub mod cxl_sector_graph;
+        pub mod cxl_vertex_provider;
+    }
+}

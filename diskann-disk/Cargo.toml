@@ -47,7 +47,9 @@ opentelemetry = { workspace = true, optional = true }
 
 [target.'cfg(target_os = "linux")'.dependencies]
 io-uring = "0.6.4"
-libc = "0.2.148"
+#libc = "0.2.148"
+memmap2 = "0.9"
+libc = "0.2"
 
 [dev-dependencies]
 rstest.workspace = true
@@ -65,6 +67,7 @@ approx.workspace = true
 proptest.workspace = true
 
 [features]
+cxl = []
 default = []
 perf_test = ["dep:opentelemetry"]
 virtual_storage = ["diskann-providers/virtual_storage"]

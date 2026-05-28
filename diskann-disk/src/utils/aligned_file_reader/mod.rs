@@ -27,6 +27,12 @@ cfg_if::cfg_if! {
     }
 }
 
+cfg_if::cfg_if! {
+    if #[cfg(feature = "cxl")] {
+        pub mod cxl_mmap_reader;
+    }
+}
+
 pub mod storage_provider_aligned_file_reader;
 pub use storage_provider_aligned_file_reader::StorageProviderAlignedFileReader;
 

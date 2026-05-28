@@ -20,3 +20,9 @@ pub mod storage;
 
 #[cfg(any(test, feature = "testing"))]
 pub mod test_utils;
+
+cfg_if::cfg_if! {
+    if #[cfg(feature = "cxl")] {
+        pub mod cxl_data_provider;
+    }
+}
