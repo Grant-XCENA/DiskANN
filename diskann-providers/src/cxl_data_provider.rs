@@ -17,20 +17,9 @@ use memmap2::Mmap;
 use diskann::{ANNError, ANNResult};
 
 // NUMA policy constants — not always exported by the libc crate
-const MPOL_BIND: libc::c_int = 2;
-const MPOL_MF_MOVE: libc::c_uint = 1 << 1;
-const MPOL_MF_STRICT: libc::c_uint = 1 << 0;
-
-extern "C" {
-    fn mbind(
-        addr: *mut libc::c_void,
-        len: libc::c_ulong,
-        mode: libc::c_int,
-        nodemask: *const libc::c_ulong,
-        maxnode: libc::c_ulong,
-        flags: libc::c_uint,
-    ) -> libc::c_int;
-}
+const MPOL_BIND: i32 = 2;
+const MPOL_MF_MOVE: i32 = 1 << 1;
+const MPOL_MF_STRICT: i32 = 1 << 0;
 
 /// CXL NUMA node ID. Detected via `numactl --hardware` or /sys/devices/system/node/.
 pub type NumaNode = u32;
@@ -53,7 +42,7 @@ fn cxl_io_error(msg: impl Into<String>) -> ANNError {
 // NUMA-aware allocation
 // ============================================================================
 
-/// Allocate memory on a specific NUMA node using mbind.
+/// Allocate memory on a specific NUMA node using mbind syscall.
 ///
 /// # Safety
 /// Returns raw pointer. Caller must manage lifetime and deallocation.
@@ -68,18 +57,18 @@ unsafe fn numa_alloc(size: usize, node: NumaNode) -> ANNResult<*mut u8> {
     // Touch pages to ensure allocation
     std::ptr::write_bytes(ptr, 0, size);
 
-    // Bind to NUMA node using mbind
+    // Bind to NUMA node via raw syscall (avoids libnuma dependency)
     let nodemask: u64 = 1 << node;
-    let maxnode = 64usize;
 
-    let ret = mbind(
+    let ret = libc::syscall(
+        libc::SYS_mbind,
         ptr as *mut libc::c_void,
         size as libc::c_ulong,
-        MPOL_BIND,
-        &nodemask as *const u64 as *const libc::c_ulong,
-        maxnode as libc::c_ulong,
-        MPOL_MF_MOVE | MPOL_MF_STRICT,
-    );
+        MPOL_BIND as libc::c_long,
+        &nodemask as *const u64 as libc::c_long,
+        64 as libc::c_long,
+        (MPOL_MF_MOVE) as libc::c_long,
+    ) as libc::c_int;
 
     if ret != 0 {
         let err = std::io::Error::last_os_error();
